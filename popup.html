@@ -62,8 +62,43 @@
       display: flex;
       align-items: center;
       margin-bottom: 8px;
-      padding: 4px;
+      padding: 8px;
       border-radius: 4px;
+      background: white;
+    }
+
+    #copyAllButton {
+      margin-bottom: 12px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-weight: 500;
+      width: auto;
+      align-self: flex-end;
+    }
+
+    #copyAllButton:hover {
+      background: #e0e0e0;
+    }
+
+    .copy-feedback {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4caf50;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      animation: fadeOut 2s forwards;
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { opacity: 0; }
     }
 
     .spinner {

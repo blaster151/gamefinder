@@ -12,7 +12,8 @@
   "host_permissions": [
     "https://store.steampowered.com/*",
     "https://www.metacritic.com/*",
-    "https://www.google.com/*"
+    "https://*.wikipedia.org/*",
+    "https://apps.apple.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -26,7 +27,7 @@
     "matches": [
       "https://store.steampowered.com/*",
       "https://www.metacritic.com/*",
-      "https://www.google.com/*"
+      "https://*.wikipedia.org/*"
     ],
     "js": ["content_script.js"]
   }],

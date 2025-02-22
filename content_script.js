@@ -13,8 +13,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'extractMetacriticDate':
       sendResponse(extractMetacriticDate());
       break;
-    case 'extractGoogleDate':
-      sendResponse(extractGoogleDate());
+    case 'extractAppStoreDate':
+      sendResponse(extractAppStoreDate());
       break;
   }
   return true; // Will respond asynchronously
@@ -126,37 +126,20 @@ function extractMetacriticDate() {
   }
 }
 
-function extractGoogleDate() {
+function extractAppStoreDate() {
   try {
-    // Try to find the release date in Google's knowledge panel
-    const knowledgePanel = document.querySelector('.kp-header');
-    if (knowledgePanel) {
-      const dateElements = knowledgePanel.querySelectorAll('[data-attrid*="release_date"]');
-      for (const element of dateElements) {
-        const date = element.textContent.replace('Release date:', '').trim();
-        if (date) {
-          return {
-            date: date
-          };
-        }
+    // Look for the release date in the information section
+    const infoElements = document.querySelectorAll('.information-list__item');
+    for (const element of infoElements) {
+      const label = element.querySelector('.information-list__item__term');
+      if (label && label.textContent.includes('Release Date')) {
+        const date = element.querySelector('.information-list__item__definition').textContent.trim();
+        return { date };
       }
     }
-
-    // Try to find structured data in search results
-    const searchResults = document.querySelectorAll('.g');
-    for (const result of searchResults) {
-      const datePattern = /Release date: ([A-Za-z]+ \d+, \d{4})|Released: ([A-Za-z]+ \d+, \d{4})/i;
-      const match = result.textContent.match(datePattern);
-      if (match) {
-        return {
-          date: match[1] || match[2]
-        };
-      }
-    }
-
     return null;
   } catch (error) {
-    console.error('Error extracting Google date:', error);
+    console.error('Error extracting App Store date:', error);
     return null;
   }
 } 

@@ -14,16 +14,83 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateResultElement = (element, result, isError = false) => {
-    element.innerHTML = isError
-      ? `❌ ${element.textContent.split(':')[0]}: ${result}`
-      : `✅ ${element.textContent.split(':')[0]}: ${result}`;
-    element.className = `result-item ${isError ? 'error' : 'success'}`;
+    const gameTitle = element.getAttribute('data-game');
+    if (isError) {
+      element.innerHTML = `❌ ${gameTitle}: ${result}`;
+      element.className = 'result-item error';
+    } else {
+      element.className = 'result-item success';
+      element.innerHTML = `<span>✅ ${gameTitle}: ${result}</span>`;
+      element.setAttribute('data-result', result);  // Store clean result in data attribute
+    }
+  };
+
+  // Function to copy all results
+  const copyResults = () => {
+    // Get all result elements (both success and error) in their original order
+    const allResults = Array.from(results.querySelectorAll('.result-item'))
+      .map(result => {
+        if (result.classList.contains('success')) {
+          const fullResult = result.getAttribute('data-result');
+          return fullResult.split(' (')[0].trim();  // Just get the date part
+        }
+        return '';  // Empty string for errors/not found
+      })
+      .join('\n');  // Join with newlines
+    
+    navigator.clipboard.writeText(allResults).then(() => {
+      const feedback = document.createElement('div');
+      feedback.className = 'copy-feedback';
+      feedback.textContent = 'Results copied!';
+      results.appendChild(feedback);
+      setTimeout(() => feedback.remove(), 2000);
+    });
   };
 
   const showError = (message) => {
     results.style.display = 'block';
     results.innerHTML = `<div class="result-item error">${message}</div>`;
   };
+
+  // Handle messages from background script
+  chrome.runtime.onMessage.addListener((message) => {
+    const resultElement = results.querySelector(`[data-game="${message.game}"]`);
+    
+    switch (message.type) {
+      case 'searchStarted':
+        // Update or create result element
+        if (!resultElement) {
+          const newElement = createResultElement(message.game);
+          newElement.setAttribute('data-game', message.game);
+          results.appendChild(newElement);
+        }
+        break;
+        
+      case 'searchComplete':
+        if (resultElement) {
+          updateResultElement(resultElement, message.result, message.result === 'No release date found');
+        }
+        break;
+        
+      case 'searchError':
+        if (resultElement) {
+          updateResultElement(resultElement, `Error - ${message.error}`, true);
+        }
+        break;
+        
+      case 'allComplete':
+        searchButton.disabled = false;
+        searchButton.textContent = '🔍 Find Release Dates';
+        
+        // Add copy button after all results
+        const copyButton = document.createElement('button');
+        copyButton.id = 'copyAllButton';
+        copyButton.textContent = '📋 Copy Results';
+        copyButton.addEventListener('click', copyResults);
+        results.appendChild(copyButton);
+        break;
+    }
+  });
 
   searchButton.addEventListener('click', async () => {
     const games = gameInput.value
@@ -43,32 +110,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     results.style.display = 'block';
     results.innerHTML = '';
+
     searchButton.disabled = true;
     searchButton.textContent = '🔍 Searching...';
 
-    const CONCURRENT_SEARCHES = 3;
-    const chunks = [];
-    
-    for (let i = 0; i < games.length; i += CONCURRENT_SEARCHES) {
-      const chunk = games.slice(i, i + CONCURRENT_SEARCHES);
-      const searches = chunk.map(async game => {
-        const resultElement = createResultElement(game);
-        results.appendChild(resultElement);
-        
-        try {
-          const result = await chrome.runtime.sendMessage({
-            type: 'searchGame',
-            game: game
-          });
-          updateResultElement(resultElement, result || 'Not found', !result);
-        } catch (err) {
-          updateResultElement(resultElement, `Error - ${err.message}`, true);
-        }
-      });
-      await Promise.all(searches);
-    }
-
-    searchButton.disabled = false;
-    searchButton.textContent = '🔍 Find Release Dates';
+    // Start the search process
+    chrome.runtime.sendMessage({
+      type: 'searchGames',
+      games: games
+    });
   });
 }); 
