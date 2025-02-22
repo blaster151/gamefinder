@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const gameInput = document.getElementById('gameInput');
   const searchButton = document.getElementById('searchButton');
-  const pasteButton = document.getElementById('pasteFromClipboard');
   const results = document.getElementById('results');
 
   const createResultElement = (game) => {
@@ -21,14 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     element.className = `result-item ${isError ? 'error' : 'success'}`;
   };
 
-  pasteButton.addEventListener('click', async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      gameInput.value = text;
-    } catch (err) {
-      results.innerHTML = '<div class="result-item error">Please paste manually (Ctrl/Cmd+V)</div>';
-    }
-  });
+  const showError = (message) => {
+    results.style.display = 'block';
+    results.innerHTML = `<div class="result-item error">${message}</div>`;
+  };
 
   searchButton.addEventListener('click', async () => {
     const games = gameInput.value
@@ -37,15 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
       .filter(game => game.length > 0);
 
     if (games.length === 0) {
-      results.innerHTML = '<div class="result-item error">Please enter at least one game title</div>';
+      showError('Please enter at least one game title');
       return;
     }
 
     if (games.length > 20) {
-      results.innerHTML = '<div class="result-item error">Please limit to 20 games at a time</div>';
+      showError('Please limit to 20 games at a time');
       return;
     }
 
+    results.style.display = 'block';
     results.innerHTML = '';
     searchButton.disabled = true;
     searchButton.textContent = '🔍 Searching...';
